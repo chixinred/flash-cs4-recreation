@@ -532,7 +532,7 @@ const S={
   stroke:'#000000', fill:'#0066ff', sw:1, ss:'solid', cap:'round', join:'round', miter:3,
   panels:{tools:true,pi:true,tl:true}, piTab:'pi', tlTab:'tl',
   sections:{publish:true,props:true}, snap:true, objDraw:false, penSeen:false,
-  brush:{size:4, shape:0, mode:'normal', smoothing:50, lockFill:false, pressure:false, tilt:false, rate:16},
+  brush:{size:4, shape:0, mode:'normal', smoothing:50, lockFill:false, pressure:false, tilt:false},
   pencilMode:'straighten', gap:'small', eraser:{mode:'normal',shape:2,faucet:false}, lassoPoly:false, ft:null,
   rectR:0, oval:{start:0,end:0,inner:0,close:true}, star:{style:'polygon',sides:5,point:.5},
   text:{font:'Times New Roman',size:12,color:'#000000',bold:false,italic:false,fauxBold:false,fauxItalic:false,script:'',ls:0,align:'left'},
@@ -1993,6 +1993,13 @@ function quadLoop(V,cornerDeg=80){
   for(let i=0;i<n;i++){const v=V[i],m=M(v,V[(i+1)%n]);d+=corner(i)?'L'+P(v)+'L'+P(m):'Q'+P(v)+' '+P(m)}
   return d+'Z';
 }
+// k-1 points strictly between b and c on the centripetal Catmull-Rom curve through a,b,c,e (no overshoot or
+// self-loops when samples are unevenly spaced); size and angle are interpolated linearly
+function crSeg(a,b,c,e,k){const dt=(p,q)=>Math.max(1e-4,Math.sqrt(Math.hypot(q[0]-p[0],q[1]-p[1]))),t1=dt(a,b),t2=t1+dt(b,c),t3=t2+dt(c,e),out=[];
+  for(let i=1;i<k;i++){const t=t1+(t2-t1)*i/k,L=(p,q,ta,tb)=>{const u=(t-ta)/(tb-ta);return[p[0]+(q[0]-p[0])*u,p[1]+(q[1]-p[1])*u]};
+    const A1=L(a,b,0,t1),A2=L(b,c,t1,t2),A3=L(c,e,t2,t3),C=L(L(A1,A2,0,t2),L(A2,A3,t1,t3),t1,t2),f=i/k;
+    out.push([C[0],C[1],b[2]+(c[2]-b[2])*f,b[3]+(c[3]-b[3])*f])}
+  return out}
 function smoothPts(P,amount,minGap){
   // below 30 the stroke keeps every wobble and pressure lump, like Flash at low settings; 100 = 3 light passes
   let Q=P;const it=Math.round(Math.max(0,amount-30)/70*3);
@@ -2032,13 +2039,17 @@ function brushDown(e){
   if(clip)s.clip=clip;
   if(B.mode==='behind'){const i=d.shapes.findIndex(o=>o.layer===d.curLayer);d.shapes.splice(i<0?d.shapes.length:i,0,s)}else d.shapes.push(s);
   renderStage();
-  // Flash got far fewer input samples than a modern pen delivers; taking at most one per B.rate ms (no coalesced
-  // events) gives fast strokes the same slightly angular, hand-made wobble
-  const gap=1.5/d.zoom;let lastT=e.timeStamp;
-  drag(e,ev=>{if(ev.timeStamp-lastT<B.rate)return;lastT=ev.timeStamp;
-    const p=sample(ev),l=s.pts[s.pts.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])>=gap)s.pts.push(p);
-    delete s.d;renderStage()},
-  ()=>{delete s.live;s.pts=smoothPts(s.pts,B.smoothing,1/d.zoom);delete s.d;
+  // every pen sample counts, including those the browser batches between events. Fast strokes still leave gaps
+  // between samples, so each gap is filled along a curve through the neighbouring samples; the newest gap stays
+  // straight until the next sample arrives (s.pts = curve through raw[0..n-2], then raw[n-1])
+  const gap=1.5/d.zoom,step=3/d.zoom,raw=[s.pts[0]];
+  const bend=i=>{const b=raw[i-1],c=raw[i],k=Math.ceil(Math.hypot(c[0]-b[0],c[1]-b[1])/step);
+    return k>1?crSeg(raw[Math.max(0,i-2)],b,c,raw[Math.min(raw.length-1,i+1)],k):[]};
+  const add=p=>{const l=raw[raw.length-1];if(Math.hypot(p[0]-l[0],p[1]-l[1])<gap)return;raw.push(p);const n=raw.length;
+    if(n>=3){const c=s.pts.pop();s.pts.push(...bend(n-2),c)}s.pts.push(p)};
+  drag(e,ev=>{const evs=ev.getCoalescedEvents?ev.getCoalescedEvents():[];(evs.length?evs:[ev]).forEach(c=>add(sample(c)));delete s.d;renderStage()},
+  ()=>{if(raw.length>1){const c=s.pts.pop();s.pts.push(...bend(raw.length-1),c)}
+    delete s.live;s.pts=smoothPts(s.pts,B.smoothing,1/d.zoom);delete s.d;
     s.fill=fitPaint(s.fill,s,B.lockFill);s.fit=fitBrush(s,d.zoom,.45+B.smoothing/100*.7,35+B.smoothing*.45);   // the "snap" on release; low smoothing keeps kinks as corners
     markKey();if(B.mode==='normal')settle(s);renderStage()});
 }
