@@ -467,6 +467,22 @@ IMG.constrain='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAOCAYAAAAfSC3
 
 "use strict";
 const $=(s,r=document)=>r.querySelector(s);
+/* ---- interface scale ----
+   On a small window (typically a laptop with display scaling, where a CSS pixel is 1.25-1.5 screen pixels) the whole
+   interface is zoomed out until the Tools panel fits. Under CSS zoom the browser reports pointer positions, element
+   boxes and the window size in screen pixels while laying out in CSS pixels; these shims convert them back, so the
+   rest of the code works in layout pixels throughout. */
+let UIK=1;const REAL={};
+(function scaleShims(){const own=(o,k)=>Object.getOwnPropertyDescriptor(o,k)||Object.getOwnPropertyDescriptor(Object.getPrototypeOf(o),k)||{};
+  const box=Element.prototype.getBoundingClientRect;
+  Element.prototype.getBoundingClientRect=function(){const r=box.call(this);return UIK===1?r:new DOMRect(r.x/UIK,r.y/UIK,r.width/UIK,r.height/UIK)};
+  ['clientX','clientY'].forEach(k=>{const g=own(MouseEvent.prototype,k).get;if(g)Object.defineProperty(MouseEvent.prototype,k,{configurable:true,get(){return g.call(this)/UIK}})});
+  ['innerWidth','innerHeight'].forEach(k=>{const g=own(window,k).get;REAL[k]=g?()=>g.call(window):()=>document.documentElement['client'+k.slice(5)];
+    if(g)Object.defineProperty(window,k,{configurable:true,get:()=>g.call(window)/UIK})});
+  ['elementFromPoint','elementsFromPoint'].forEach(k=>{const f=Document.prototype[k];Document.prototype[k]=function(x,y){return f.call(this,x*UIK,y*UIK)}})})();
+function fitUI(){const t=$('#tools'),need=Math.max(560,S.panels.tools&&t?t.getBoundingClientRect().top+t.scrollHeight+8:0);
+  const k=Math.floor(Math.max(.6,Math.min(1,REAL.innerHeight()/need,REAL.innerWidth()/1024))*100)/100;
+  if(k===UIK)return;UIK=k;document.documentElement.style.zoom=k===1?'':String(k)}
 const el=(tag,cls,html)=>{const e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e};
 const img=(k,extra='')=>IMG[k]?`<img src="${IMG[k]}" alt="" ${extra}>`:'';
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -822,7 +838,7 @@ function placeSplitters(){
 function layout(){
   applyGrid();
   $('#toolDock').style.display=S.panels.tools?'':'none';$('#piDock').style.display=S.panels.pi?'':'none';$('#tlDock').style.display=S.panels.tl?'':'none';
-  renderTools();renderPIDock();renderTLDock();renderStage();placeSplitters();wsLabel();savePrefs();
+  renderTools();fitUI();renderPIDock();renderTLDock();renderStage();placeSplitters();wsLabel();savePrefs();
 }
 function render(){renderDoc();layout()}
 
@@ -3271,7 +3287,7 @@ addEventListener('keydown',e=>{
       if(m.length){const curIdx=m.findIndex(t=>t.name===S.tool);selectTool(m[(curIdx+1)%m.length].name);return}}}
 });
 addEventListener('keyup',e=>{if(e.key===' '&&spaceHand){spaceHand=false;setCursor()}});
-addEventListener('resize',()=>{renderStage();placeSplitters()});
+addEventListener('resize',()=>{fitUI();renderStage();placeSplitters()});
 
 (function restorePrefs(){const p=loadPrefs();S.userWS=p.user&&typeof p.user==='object'?p.user:{};S.wsName='Essentials';
   const known=n=>WS_PRESETS[n]||S.userWS[n];if(p.name&&known(p.name))S.wsName=p.name;
