@@ -439,6 +439,37 @@ body{background:#8e8e8e}
 .modal .fr label.chk{width:auto;text-align:left}
 .kbList{max-height:320px}
 .kbList .wsRow b{font-weight:normal;color:#333;white-space:nowrap}
+/* ---------- boarded up: every "Adobe" is nailed over with weathered planks ---------- */
+.pk{position:absolute;display:block;pointer-events:none;border-radius:1.5px;
+  background:
+    radial-gradient(circle at 4px 50%,#2b2b2b 0 .9px,#c4c4c4 1.3px 1.8px,rgba(0,0,0,.35) 2px,transparent 2.5px),
+    radial-gradient(circle at calc(100% - 4px) 50%,#2b2b2b 0 .9px,#c4c4c4 1.3px 1.8px,rgba(0,0,0,.35) 2px,transparent 2.5px),
+    repeating-linear-gradient(178.5deg,transparent 0 1.6px,rgba(70,42,18,.24) 1.6px 2.2px,transparent 2.2px 3.9px,rgba(255,236,205,.14) 3.9px 4.4px),
+    linear-gradient(#b08a62,#977350 55%,#7e5d3d);
+  box-shadow:0 1px 2px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,238,210,.4),inset 0 -1px 0 rgba(40,22,8,.35)}
+.boarded{position:relative;display:inline-block;color:transparent!important;white-space:nowrap}
+.boarded .pk{left:-3px;right:-3px;height:.6em;min-height:6px}
+.boarded .pk:first-of-type{top:0;transform:rotate(-3.5deg)}
+.boarded .pk:last-of-type{top:.5em;left:-2px;right:-4px;transform:rotate(2.5deg)}
+.sp .bannerBox,.about .bannerBox{position:relative;height:104px;flex:none;overflow:hidden}
+.about .banner{display:block;height:104px}
+.sp .bannerBox .pk,.about .bannerBox .pk{height:9px}
+/* About Flash: a borderless splash window, as CS4 showed it */
+.aboutBg{position:fixed;inset:0;z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px;cursor:default}
+.about{width:650px;max-width:100%;background:linear-gradient(#fff,#f1f1f1 70%,#e6e6e6);box-shadow:0 12px 40px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.25);font-family:Arial,Helvetica,sans-serif;color:#333;overflow:hidden;animation:abIn .18s ease-out}
+@keyframes abIn{from{opacity:0;transform:scale(.97)}}
+.about .abBody{display:flex;gap:18px;padding:18px 22px 14px}
+.about .abIcon{width:72px;height:72px;flex:none;filter:drop-shadow(0 2px 3px rgba(0,0,0,.3))}
+.about .abMain{flex:1;min-width:0}
+.about .abName{font-size:20px;font-weight:bold;letter-spacing:-.2px}
+.about .abVer{font-size:11px;color:#666;margin-top:3px}
+.about .abCred{position:relative;height:96px;overflow:hidden;margin-top:12px;border-top:1px solid #d6d6d6;border-bottom:1px solid #d6d6d6;
+  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.about .abRoll{position:absolute;left:0;right:0;text-align:center;font-size:11px;line-height:17px;animation:abRoll 22s linear infinite}
+.about .abRoll b{display:block;margin-top:8px;color:#b4161b;font-size:10px;letter-spacing:.6px;text-transform:uppercase}
+@keyframes abRoll{from{transform:translateY(96px)}to{transform:translateY(-100%)}}
+@media (prefers-reduced-motion:reduce){.about .abRoll{animation:none;position:static}.about .abCred{overflow:auto;-webkit-mask-image:none;mask-image:none}}
+.about .abLegal{font-size:9.5px;line-height:13px;color:#7a7a7a;padding:0 22px 14px}
 </style>
 </head>
 <body>
@@ -1047,6 +1078,9 @@ function bindScrollbars(sw){
       drag(e,ev=>{const dd=((hz?ev.clientX:ev.clientY)-s0)*k2;if(hz)S.doc.cx=c0-dd;else S.doc.cy=c0-dd;renderStage()})});
     trk.addEventListener('pointerdown',e=>{if(e.target!==trk)return;const r=th.getBoundingClientRect(),before=hz?e.clientX<r.left:e.clientY<r.top,g=scrollGeom();step((before?-1:1)*(hz?g.W:g.H)*.9)});
     $('.sa.up',bar).addEventListener('pointerdown',()=>step(-20));$('.sa.dn',bar).addEventListener('pointerdown',()=>step(20))})}
+// the start page's red banner, with planks nailed over its "ADOBE®" and logo (positions in the 650×104 image)
+function bannerHTML(){const plank=(x,y,w,a,h)=>`<i class="pk" style="left:${x}px;top:${y}px;width:${w}px;transform:rotate(${a}deg)${h?`;height:${h}px`:''}"></i>`;
+  return`<div class="bannerBox"><img class="banner" src="${IMG.sp_banner}" alt="">${plank(13,73,66,-4)+plank(14,82,64,3)+plank(603,12,46,-6,12)+plank(601,24,48,5,12)+plank(602,36,46,-3,12)}</div>`}
 function renderWelcome(da){
   const w=el('div','');w.id='welcome';
   const sp=el('div','sp');
@@ -1055,7 +1089,7 @@ function renderWelcome(da){
   const create=`<div class="hd">Create New</div>`+kinds.map(k=>`<div class="it" data-a="new" data-k="${k[0]}">${img(k[2])}<span>${esc(k[1])}</span></div>`).join('');
   const tmpl=`<div class="hd">Create from Template</div>`+TEMPLATES.map(t=>`<div class="it" data-a="tmpl">${img('sp_folder')}<span>${esc(t)}</span></div>`).join('')+`<div class="it" data-a="tmpl">${img('sp_folder')}<span>More...</span></div>`+
     `<div class="hd" style="margin-top:14px">Extend</div><div class="it">${img('sp_icon_exchange','style="width:16px;height:16px"')}<span>Flash Exchange »</span></div>`;
-  sp.innerHTML=`<img class="banner" src="${IMG.sp_banner}" alt="">
+  sp.innerHTML=`${bannerHTML()}
     <div class="list" style="background-image:url(${IMG.sp_background_list})"><div class="col">${recent}</div><div class="col">${create}</div><div class="col">${tmpl}</div></div>
     <div class="links">${['Getting Started »','New Features »','Resources »'].map(l=>`<div class="lk">${img('sp_icon_help')}<span>${l}</span></div>`).join('')}
       <div class="tips">${img('sp_appicon_xl','style="width:54px;height:54px"')}<span>Find the latest tips, podcasts, and more in Adobe® Bridge Home.</span></div></div>
@@ -3482,8 +3516,26 @@ function gridDlg(){const G=S.grid,C=S.checks;
 function snapDlg(){const C=S.checks,K=['Snap Align','Snap to Grid','Snap to Guides','Snap to Pixels','Snap to Objects'],on=k=>k==='Snap to Objects'?S.snap:!!C[k];
   const bg=modal('Edit Snapping',K.map((k,i)=>`<div class="fr"><label></label><label class="chk${k==='Snap to Guides'?' dis':''}"><input type="checkbox" data-k="${i}"${on(k)?' checked':''}${k==='Snap to Guides'?' disabled':''}> ${k}</label></div>`).join(''),()=>{
     bg.querySelectorAll('input[data-k]').forEach(c=>{const k=K[c.dataset.k];if(k==='Snap to Objects')S.snap=c.checked;else if(k!=='Snap to Guides')C[k]=c.checked});renderToolOpts()})}
-function aboutDlg(){modal('About Flash',`<div style="text-align:center;padding:4px 0"><div style="font-size:18px;font-weight:bold">Flash CS4 Recreation</div>
-  <div style="margin-top:12px;color:#555">A browser recreation of a classic animation tool, not affiliated with Adobe.</div></div>`,()=>true,'OK',false)}
+// Flash > About Flash: a borderless splash-style window like CS4's, closed by a click anywhere or Esc
+function aboutDlg(){closeMenus();document.querySelectorAll('.aboutBg').forEach(b=>b.remove());
+  const credit=(h,lines)=>`<b>${h}</b>${lines.map(esc).join('<br>')}`;
+  const bg=el('div','aboutBg',`<div class="about" role="dialog" aria-label="About Flash">${bannerHTML()}
+    <div class="abBody">${img('sp_appicon_xl','class="abIcon"')}<div class="abMain">
+      <div class="abName">Flash CS4 Recreation</div>
+      <div class="abVer">Version 1.0 &nbsp;·&nbsp; modeled on Flash CS4 Professional 10.0.0.544</div>
+      <div class="abCred"><div class="abRoll">
+        ${credit('Created by',['chixinred'])}
+        ${credit('Drawing',['Pencil, Brush, Pen, shapes and primitives','Fills, gradients, bitmaps and the Eraser','Drawing tablet pressure, tilt and eraser end'])}
+        ${credit('Animation',['Keyframes, classic and shape tweens','Symbols, Convert Layers to Symbol','Mask, guide and motion guide layers','Bones and armatures'])}
+        ${credit('Sound',['Event, Start, Stop and Stream sync','Waveforms and scrubbing'])}
+        ${credit('Export',['Animated GIF and PNG sequences','.fla files for Flash CS5 and later','Sprite sheets for Friday Night Funkin’'])}
+        ${credit('Special thanks',['Everyone who ever made a Flash cartoon','or a game in a browser at 2 a.m.'])}
+      </div></div>
+    </div></div>
+    <div class="abLegal">© 2026 chixinred. An unofficial fan recreation made in a web browser; not affiliated with or endorsed by Adobe.
+      Flash is a trademark of its owner, used here only to describe what this recreates.</div></div>`);
+  const close=()=>{bg.remove();removeEventListener('keydown',esc_,true)},esc_=e=>{if(e.key==='Escape'||e.key==='Enter'){e.preventDefault();e.stopPropagation();close()}};
+  bg.addEventListener('pointerdown',close);addEventListener('keydown',esc_,true);document.body.appendChild(bg)}
 function shortcutsDlg(){const rows=[],walk=(items,path)=>items.forEach(it=>{if(it.t==='-')return;if(it.sub){if(it.t!=='Workspace')walk(it.sub,path+' ▸ '+it.t);return}
     if(SHORTCUTS[it.t])rows.push(`<div class="wsRow"><span>${esc(path+' ▸ '+it.t.replace('Test %s','Test Scene'))}</span><b>${esc(SHORTCUTS[it.t])}</b></div>`)});
   MENUBAR.forEach(m=>walk(m.items,m.title));
@@ -3599,6 +3651,18 @@ $('#appbar').insertAdjacentHTML('beforeend',`<div class="abSep"></div><div id="h
 $('#helpSearch input').addEventListener('keydown',e=>e.stopPropagation());
 renderMenubar();render();
 
+/* ---- boarded up: every "Adobe" the interface shows is nailed over with planks; the word stays underneath for screen
+   readers. A dropdown's options can't hold planks, so there it turns into logs. The stage (the user's own art) is left alone. ---- */
+function boardUp(root){const start=root&&(root.nodeType===3?root.parentElement:root.nodeType===1?root:null);if(!start||start.closest('svg,[data-noboard]'))return;
+  const w=document.createTreeWalker(start,NodeFilter.SHOW_TEXT),hits=[];
+  while(w.nextNode()){const n=w.currentNode;if(n.nodeValue.includes('Adobe')&&!n.parentElement.closest('.boarded,script,style,textarea,svg,[data-noboard]'))hits.push(n)}
+  hits.forEach(n=>{const p=n.parentElement;if(p.tagName==='OPTION'||p.tagName==='TITLE'){n.nodeValue=n.nodeValue.replace(/Adobe®?/g,'🪵🪵');return}
+    const f=document.createDocumentFragment();
+    n.nodeValue.split(/(Adobe®?)/).forEach(part=>{if(!part)return;if(!part.startsWith('Adobe')){f.append(part);return}
+      const b=el('span','boarded',esc(part)+'<i class="pk"></i><i class="pk"></i>');b.setAttribute('role','img');b.setAttribute('aria-label',part);f.append(b)});
+    p.replaceChild(f,n)})}
+new MutationObserver(ms=>ms.forEach(m=>m.type==='characterData'?boardUp(m.target):m.addedNodes.forEach(boardUp))).observe(document.body,{childList:true,subtree:true,characterData:true});
+boardUp(document.body);
 </script>
 </body>
 </html>
