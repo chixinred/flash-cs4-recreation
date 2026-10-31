@@ -2920,7 +2920,8 @@ async function parseFla(buf){const get=await unzipFla(buf),txt=async n=>{const b
 async function openFlaBuffer(buf,name){try{const r=await parseFla(buf);if(!r.doc.layers.length)r.doc.layers=[{name:'Layer 1',frames:{1:[]},len:1}];loadDocState(r.doc,name);S.doc.format='fla';
     if(r.warn.length)toast('Opened with changes: '+r.warn.join('; ')+'.')}catch(e){toast(e&&e.message&&!/^[a-z]/.test(e.message)?e.message:'That .fla could not be opened.')}}
 function saveFla(name){const d=S.doc;if(!d)return;d.name=name;updateTab();if(Object.keys(d.sounds||{}).length)toast('Sounds are not included in .fla files; save as a Flash document (.json) to keep them.');const data=new Blob([buildFla()],{type:'application/zip'});
-  offerFile(safeName(name)+'.fla.zip',data).then(ok=>{if(ok){d.dirty=false;d.format='fla';updateTab();toast('Saved. Remove the “.zip” ending to open it in Flash CS5 or later / Animate.')}})}
+  // claude.ai's save prompt only takes standard web file types, so there it goes out as .fla.zip; a plain download is a real .fla
+  const zipped=!!downloadsNS;offerFile(safeName(name)+(zipped?'.fla.zip':'.fla'),data).then(ok=>{if(ok){d.dirty=false;d.format='fla';updateTab();if(zipped)toast('Saved. Remove the “.zip” ending to open it in Flash CS5 or later / Animate.')}})}
 
 /* GIF89a encoder: one global palette from the most common colours, LZW-coded frames */
 function encodeGIF(frames,w,h,delayCs,loop){
